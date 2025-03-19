@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Widget.AppCompat.ActionButton" parent="Widget.MaterialComponents.Button">
+        <!-- Define button attributes -->
+        <item name="android:textColor">@color/common_google_signin_btn_text_dark_default</item>
+        <item name="android:textSize">14sp</item>
+        <!-- Add more attributes as needed -->
+    </style>
+</resources>

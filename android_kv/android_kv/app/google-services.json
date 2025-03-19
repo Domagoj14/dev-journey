@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "960014785619",
+    "project_id": "android-kv-projekt",
+    "storage_bucket": "android-kv-projekt.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960014785619:android:7f2b897206920c8a217aa6",
+        "android_client_info": {
+          "package_name": "com.example.android_kv"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5ZBIo3ZAa5Pe6bWfZkkHB1Dz8uBcgqlw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
