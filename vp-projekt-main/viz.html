@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson@3/dist/topojson.min.js"></script>
+    <title>Stope zločina u državama SAD-a</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f3c2b9;
+        }
+
+        .bigTitle {
+            color: #333;
+            font-size: 2em;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .titleSection {
+            display: flex;
+            align-items: center;
+
+        }
+
+        .playButton {
+            color: #fff;
+            cursor: pointer;
+            border: 1px solid #000;
+            border-radius: 4px;
+            padding: 0.8em 2em;
+            background: #000;
+            transition: 0.2s;
+        }
+
+        .playButton:hover {
+            color: #000;
+            transform: translate(-0.25rem, -0.25rem);
+            background: #7ce767;
+            box-shadow: 0.25rem 0.25rem #000;
+        }
+
+        .playButton:active {
+            transform: translate(0);
+            box-shadow: none;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+        }
+
+        #selectedYear {
+            font-weight: bold;
+        }
+
+        .control-panel #yearRange {
+            width: 100%;
+        }
+
+        .control-panel .radio-buttons {
+            display: flex;
+            align-items: center;
+        }
+
+        .control-panel .radio-buttons div {
+            margin-right: 10px;
+        }
+
+        .control-panel .year-control,
+        .control-panel .sort-control {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .control-panel .year-control label,
+        .control-panel .sort-control label,
+        #selectedYear {
+            margin-right: 1em;
+            font-size: 1.2em;
+        }
+
+        path {
+            stroke: #fff;
+            stroke-width: 0.5px;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: left;
+            width: auto;
+            height: auto;
+            padding: 10px;
+            font-size: 16px;
+            background: #f4f4f4;
+            border: 1px solid #d4d4d4;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .flexed-elements {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .map-container,
+        .bar-charts-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+
+        .map-container h3,
+        .bar-charts-container h3 {
+            text-align: center;
+        }
+
+        .map-container {
+            width: 55%;
+        }
+
+        .bar-charts-container {
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 20px;
+        }
+
+        .map {
+            width: 100%;
+        }
+
+        .bar-chart {
+            width: 100%;
+            margin-left: 2em;
+        }
+
+        #barChart2 {
+            margin-top: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="titleSection">
+        <button class="playButton" id="playButton">Animiraj</button>
+        <h1 class="bigTitle">Stope zločina u državama SAD-a</h1>
+    </div>
+    <div class="control-panel">
+        <div class="year-control">
+            <label for="yearRange">Godina: </label>
+            <span id="selectedYear">1960</span>
+            <input type="range" id="yearRange" min="1960" max="2019" value="1960">
+        </div>
+        <div class="sort-control">
+            <label>Sortiraj prema: </label>
+            <div class="radio-buttons">
+                <div>
+                    <input type="radio" id="total" name="sortCriteria" value="total" checked>
+                    <label for="total">Ukupna stopa zločina</label>
+                </div>
+                <div>
+                    <input type="radio" id="violent" name="sortCriteria" value="violent">
+                    <label for="violent">Stopa nasilničkog zločina</label>
+                </div>
+                <div>
+                    <input type="radio" id="property" name="sortCriteria" value="property">
+                    <label for="property">Stopa imovinskog zločina</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flexed-elements">
+        <div class="map-container">
+            <h3>Prikaz stope zločina po 100.000 stanovnika u bojama</h3>
+            <div id="mapContainer"></div>
+        </div>
+        <div class="bar-charts-container">
+            <h3>Prikaz najopasnijih i najsigurnijih država</h3>
+            <svg id="barChart1" class="bar-chart" width="800" height="300"></svg>
+            <svg id="barChart2" class="bar-chart" width="800" height="300"></svg>
+        </div>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+    <script>
+        var width = 1000;
+        var height = 650;
+
+        //"globalna" varijabla koja će biti korištena u većini funkcija
+        var us;
+
+        //definicija projekcije
+        var projection = d3.geoAlbersUsa()
+            .scale(1300)
+            .translate([487.5, 305]);
+
+        //varijabla za generiranje linija i oblika za geografske podatke s definiranom projekcijom
+        var path = d3.geoPath().projection(projection);
+
+        //kreiranje svg elementa
+        var svg = d3.select("#mapContainer")
+            .append("svg")
+            .attr("class", "map")
+            .attr("width", width)
+            .attr("height", height);
+
+        //element g za smještanje mape
+        var mapContainer = document.getElementById("mapContainer");
+        mapContainer = svg.append("g");
+
+        //definiranje i postavljanje ograničenja zooma
+        let zoom = d3.zoom()
+            .scaleExtent([0.5, 5])
+            .translateExtent([[0, 0], [width, height]])
+            .on("zoom", handleZoom);
+        svg.call(zoom);
+
+        //učitavanje podataka i dodavanje slušatelja događaja za interaktivnu konzolu
+        d3.json("us_states.json").then(function (data) {
+            us = data;
+            d3.json("state_crime.json").then(function (crimeData) {
+                var initialYear = parseInt(document.getElementById("selectedYear").textContent);
+                var initialCriteria = document.querySelector('input[name="sortCriteria"]:checked').value;
+                
+                //inicijalni poziv funkcije
+                updateAll(crimeData, initialYear, initialCriteria);
+
+                //dohvaćanje html elemenata
+                var yearRange = document.getElementById("yearRange");
+                var selectedYearDisplay = document.getElementById("selectedYear");
+                var sortCriteria = document.getElementsByName("sortCriteria");
+                var playButton = document.getElementById("playButton");
+                var isPlaying = false;
+                var playInterval;
+
+                //slušatelji događaja
+                yearRange.addEventListener("input", function () {
+                    selectedYear = parseInt(this.value, 10);
+                    selectedYearDisplay.textContent = selectedYear;
+                    var criteria = document.querySelector('input[name="sortCriteria"]:checked').value;
+                    updateAll(crimeData, selectedYear, criteria);
+                });
+                sortCriteria.forEach(function (radio) {
+                    radio.addEventListener("change", function () {
+                        var selectedYear = parseInt(yearRange.value, 10);
+                        var criteria = this.value;
+                        updateAll(crimeData, selectedYear, criteria);
+                    });
+                });
+
+                playButton.addEventListener("click", function() {
+                    if (!isPlaying) {
+                        isPlaying = true;
+                        playButton.textContent = "Pauziraj";
+                        var currentYear = parseInt(yearRange.value, 10);
+                        playInterval = setInterval(function() {
+                            if (currentYear < 2019) {
+                                currentYear++;
+                            } else {
+                                currentYear = 1960;
+                            }
+                            yearRange.value = currentYear;
+                            selectedYearDisplay.textContent = currentYear;
+                            var criteria = document.querySelector('input[name="sortCriteria"]:checked').value;
+                            updateAll(crimeData, currentYear, criteria);
+                        }, 300);
+                    } else {
+                        isPlaying = false;
+                        playButton.textContent = "Play";
+                        clearInterval(playInterval);
+                    }
+                });
+            });
+        });
+
+        //ažuriranje kompletne vizualizacije
+        function updateAll(data, year, criteria) {
+            //filtriranje podataka po godini koja se promatra
+            var filteredData = data.filter(function (d) {
+                return d.Year === year;
+            });
+
+            //sortiranje po kriteriju
+            filteredData.sort((a, b) => {
+                var crimeRateA, crimeRateB;
+                switch (criteria) {
+                    case "violent":
+                        crimeRateA = a.Data.Rates.Violent.All;
+                        crimeRateB = b.Data.Rates.Violent.All;
+                        break;
+                    case "property":
+                        crimeRateA = a.Data.Rates.Property.All;
+                        crimeRateB = b.Data.Rates.Property.All;
+                        break;
+                    default:
+                        crimeRateA = a.Data.Rates.Property.All + a.Data.Rates.Violent.All;
+                        crimeRateB = b.Data.Rates.Property.All + b.Data.Rates.Violent.All;
+                }
+                return crimeRateB - crimeRateA;
+            });
+
+            var top5HighCrimeStates = filteredData.slice(0, 5);
+            var top5LowCrimeStates = filteredData.slice(-5);
+
+            //pozivanje funkcija za ažuriranje pojedinih dijelova vizualizacije
+            renderMap(filteredData, year, criteria);
+            renderBarChart("barChart1", top5HighCrimeStates, "5 država s najvećom stopom kriminala", criteria);
+            renderBarChart("barChart2", top5LowCrimeStates, "5 država s najmanjom stopom kriminala", criteria);
+        }
+
+        //ažuriranje mape i definiranje ponašanja tooltipa
+        function renderMap(crimeData, year, criteria) {
+            mapContainer.selectAll("path").remove();
+            var tooltip = d3.select("#tooltip");
+
+            var maxCrimeRate = d3.max(crimeData, function (d) {
+                return (criteria === "total") ? (d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / 
+                d.Data.Population : (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All;
+            });
+            var minCrimeRate = d3.min(crimeData, function (d) {
+                return (criteria === "total") ? (d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / 
+                d.Data.Population : (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All;
+            });
+
+            //definiranje domene i skale boja
+            var colorScale = d3.scaleLinear()
+                .domain([minCrimeRate, maxCrimeRate])
+                .range(["#ffffcc", "#800026"]);
+
+            //generiranje linija i oblika za geografske podatke s definiranom projekcijom
+            mapContainer.selectAll("path")
+                .data(topojson.feature(us, us.objects.states).features)
+                .enter().append("path")
+                .attr("d", path)
+                //bojanje država
+                .style("fill", function (d) {
+                    var stateData = crimeData.find(function (element) {
+                        return element.State === d.properties.name;
+                    });
+                    if (stateData) {
+                        var crimeRate = (criteria === "total") ? (stateData.Data.Totals.Property.All + stateData.Data.Totals.Violent.All) / 
+                        stateData.Data.Population : (criteria === "violent") ? stateData.Data.Rates.Violent.All : stateData.Data.Rates.Property.All;
+                        return colorScale(crimeRate);
+                    } else {
+                        return "#fff"; //Ako nema podataka
+                    }
+                })
+                .style("stroke", "gray")
+                .style("stroke-width", 1)
+                .style("stroke-opacity", 1)
+                //ponašanje tooltipa
+                .on("mouseover", function (e, d) {
+                    var stateData = crimeData.find(function (element) {
+                        return element.State === d.properties.name;
+                    });
+
+                    if (stateData) {
+                        var crimeRate = (criteria === "total") ? (stateData.Data.Totals.Property.All + stateData.Data.Totals.Violent.All) / 
+                        stateData.Data.Population : (criteria === "violent") ? stateData.Data.Rates.Violent.All : stateData.Data.Rates.Property.All;
+                        var crimeNumber = stateData.Data.Totals.Property.All
+                        var population = stateData.Data.Population;
+                        var propertyCrimes = stateData.Data.Totals.Property.All;
+                        var violentCrimes = stateData.Data.Totals.Violent.All;
+                        var totalBurglaryCrimes = stateData.Data.Totals.Property.Burglary;
+                        var totalLarcenyCrimes = stateData.Data.Totals.Property.Larceny;
+                        var totalMotorCrimes = stateData.Data.Totals.Property.Motor;
+                        var totalAssaultCrimes = stateData.Data.Totals.Violent.Assault;
+                        var totalMurderCrimes = stateData.Data.Totals.Violent.Murder;
+                        var totalRapeCrimes = stateData.Data.Totals.Violent.Rape;
+                        var totalRobberyCrimes = stateData.Data.Totals.Violent.Robbery;
+
+                        tooltip.transition().duration(200).style("opacity", 0.9);
+                        tooltip.html(
+                            "<b>" + stateData.State + "</b>" + "<br><br>Stanovništvo: " + population + "<br>Ukupni broj zločina: " + crimeNumber
+                            + "<br>Broj imovinskih zločina: " + propertyCrimes + "<br>Broj nasilničkih zločina: " + violentCrimes
+                            + "<br>Provale/krađe: " + totalBurglaryCrimes + "<br>Razbojništvo: " + totalLarcenyCrimes
+                            + "<br>Krađa vozila: " + totalMotorCrimes + "<br>Napadi: " + totalAssaultCrimes + "<br>Ubojstva: " + totalMurderCrimes
+                            + "<br>Silovanja: " + totalRapeCrimes + "<br>Pljačke: " + totalRobberyCrimes)
+                            .style("left", (e.pageX + 10) + "px")
+                            .style("top", (e.pageY - 28) + "px");
+                    }
+                })
+                .on("mouseleave", function () {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                })
+                //zumiranje na klik na državu
+                .on("click", function (event, d) {
+                    var stateData = crimeData.find(element => element.State === d.properties.name);
+                    if (stateData) {
+                        zoomToState(event, stateData);
+                    }
+                })
+        }
+
+        //ažuriranje grafova
+        function renderBarChart(svgId, data, title, criteria) {
+            var svg = d3.select(`#${svgId}`);
+            svg.selectAll("*").remove();
+
+            //dimenzije
+            var margin = { top: 30, right: 20, bottom: 30, left: 50 };
+            var width = +svg.attr("width") - margin.left - margin.right;
+            var height = +svg.attr("height") - margin.top - margin.bottom;
+
+            var g = svg.append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+            var x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
+            x.domain(data.map(function (d) { return d.State; }));
+
+            var y = d3.scaleLinear().rangeRound([height, 0]);
+            y.domain([0, d3.max(data, function (d) { return (criteria === "total") ? ((d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population) * 100000 : (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All; }) + 4000]);
+
+            //domena skale boja
+            var colorScale = d3.scaleLinear()
+                .domain([0, d3.max(data, function (d) { return (criteria === "total") ? ((d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / 
+                d.Data.Population) * 100000 : (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All; })])
+
+            //boje
+            var colorRange;
+            if (svgId === "barChart1") {
+                colorRange = ["#B96666", "#800026"]; //paleta crvene boje
+            } else {
+                colorRange = ["#83A561", "#EAE69E"]; //paleta zelene boje
+            }
+            colorScale.range(colorRange);
+
+            //x i y osi
+            svg.append("line")
+                .attr("x1", margin.left)                //početak x koordinate
+                .attr("y1", height + margin.top)        //početak y koordinate
+                .attr("x2", width + margin.left)        //kraj x koordinate
+                .attr("y2", height + margin.top)        //kraj y koordinate
+                .attr("stroke", "#000");
+            svg.append("line")
+                .attr("x1", margin.left)
+                .attr("y1", height + margin.top)
+                .attr("x2", margin.left)
+                .attr("y2", margin.top - 10)
+                .attr("stroke", "black");
+
+            //strelica
+            svg.append("polygon")                     
+                .attr("points", `${margin.left - 5},${margin.top - 10} ${margin.left + 5},${margin.top - 10} ${margin.left},${margin.top - 20}`)
+                .style("fill", "black");
+
+            //x os vrijednosti
+            g.append("g")
+                .attr("class", "axis axis--x")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            //y os vrijednosti
+            g.append("g")
+                .attr("class", "axis axis--y")
+                .call(d3.axisLeft(y).ticks(10).tickFormat(d3.format(".2s")))
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", "0.8em")
+                .attr("text-anchor", "end");
+
+            //Naslov
+            svg.append("text")
+                .attr("x", (width + margin.left + margin.right) / 2)
+                .attr("y", margin.top / 2)
+                .attr("text-anchor", "middle")
+                .style("font-size", "16px")
+                .text(title);
+
+            //ime y-osi
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "end")
+                .attr("x", -100)
+                .attr("y", 12)
+                
+                .attr("font-size", "16px")
+                .attr("transform", "rotate(-90)")
+                .text("Stopa zločina");
+
+            //stupovi
+            g.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", function (d) { return x(d.State); })
+                .attr("y", function (d) { return y((criteria === "total") ? ((d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population) * 100000 : 
+                (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All); })
+                .attr("width", x.bandwidth())
+                .attr("height", function (d) {
+                    return height - y((criteria === "total") ? ((d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population) * 100000 : 
+                    (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All); 
+                })
+                .style("fill", function (d) {
+                    var crimeRate = ((criteria === "total") ? (d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population * 100000 : 
+                    (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All);
+                    return colorScale(crimeRate);
+                })
+                .on("click", function (event, d) {
+                    zoomToState(event, d);
+                });
+
+            //vrijednosti stope zločina
+            g.selectAll(".crime-rate-label")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("class", "crime-rate-label")
+                .attr("x", function (d) { return x(d.State) + x.bandwidth() / 2; })
+                .attr("y", function (d) { return y((criteria === "total") ? (d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population * 100000 : 
+                (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All) - 5; })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .text(function (d) {
+                    var crimeRate = ((criteria === "total") ? (d.Data.Totals.Property.All + d.Data.Totals.Violent.All) / d.Data.Population * 100000 : 
+                    (criteria === "violent") ? d.Data.Rates.Violent.All : d.Data.Rates.Property.All);
+                    return crimeRate.toFixed(2);
+                });
+        }
+
+        //funkcionalnost zumiranja
+        function zoomToState(event, stateData) {
+            let statePath = topojson.feature(us, us.objects.states).features.find(state => state.properties.name === stateData.State);
+            if (statePath) {
+                let bounds = path.bounds(statePath);
+                let dx = bounds[1][0] - bounds[0][0];
+                let dy = bounds[1][1] - bounds[0][1];
+                let x = (bounds[0][0] + bounds[1][0]) / 2;
+                let y = (bounds[0][1] + bounds[1][1]) / 2;
+                let scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height)));
+                let translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+                event.stopPropagation();
+                svg.transition()
+                    .duration(1000)
+                    .call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+            }
+        }
+
+        //neodređeno zumiranje
+        function handleZoom(event) {
+            mapContainer.attr("transform", event.transform);
+        }
+    </script>
+</body>
+
+</html>
