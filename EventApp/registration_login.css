@@ -1,0 +1,137 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Form Container */
+form {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+    text-align: center; /* Ensures that all text inside the form is centered */
+}
+
+h1 {
+    text-align: center;
+    color: #333333;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333333;
+    display: block;
+    text-align: left; /* Keep labels aligned to the left */
+    margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0px 0px 5px rgba(76, 175, 80, 0.5);
+}
+
+/* Button Styles */
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Error & Success Messages */
+.success {
+    color: #4CAF50;
+    background-color: #dff0d8;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.error {
+    color: #ff4d4d;
+    background-color: #fdd;
+    padding: 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Centering the form on the page */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 5px; /* Reduced padding for a thinner footer */
+    font-size: 14px; /* Smaller font size */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.footer p {
+    margin: 5px 0;
+}
+
+.footer a {
+    color: #4CAF50; /* Link color */
+    text-decoration: none; /* No underline */
+}
+
+.footer a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    form {
+        width: 90%;
+    }
+}

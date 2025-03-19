@@ -1,0 +1,142 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+}
+
+.navbar a {
+    margin-left: 15px;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 8px 16px;
+}
+
+
+
+.container {
+    width: 50%;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+input, textarea, button {
+    margin: 10px 0;
+}
+
+.message {
+    margin-top: 20px;
+    text-align: center;
+    color: #fff;
+    background-color: #4CAF50;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.error {
+    background-color: #f44336; /* Red background for errors */
+}
+
+
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 5px; /* Reduced padding for a thinner footer */
+    font-size: 14px; /* Smaller font size */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.footer p {
+    margin: 5px 0;
+}
+
+.footer a {
+    color: #4CAF50; /* Link color */
+    text-decoration: none; /* No underline */
+}
+
+.footer a:hover {
+    text-decoration: underline; /* Underline on hover */
+}
+
+
+/* For tablets (screens smaller than 768px) */
+@media screen and (max-width: 768px) {
+    /* Navbar adjustments */
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .navbar a {
+        margin-left: 0;
+        font-size: 16px; /* Reduce font size */
+        padding: 6px 12px; /* Reduce padding for links */
+    }
+
+    /* Events container adjustments */
+    .events-container {
+        flex-direction: column;
+        gap: 15px; /* Less gap between events */
+    }
+
+    /* Adjust event items to take full width */
+    .event-item {
+        width: 100%;
+        margin-bottom: 15px; /* Less space below each event */
+    }
+
+    /* Footer adjustments */
+    .footer {
+        padding: 10px;
+        font-size: 12px; /* Smaller font for footer */
+    }
+}
+
+/* For phones (screens smaller than 480px) */
+@media screen and (max-width: 480px) {
+    /* Navbar layout for mobile */
+    .navbar {
+        padding: 8px;
+    }
+
+    .navbar a {
+        font-size: 14px; /* Further reduce font size */
+        padding: 4px 10px; /* Even smaller padding */
+    }
+
+    /* Events container for mobile */
+    .events-container {
+        flex-direction: column;
+        gap: 10px; /* Reduce gap for compact view */
+    }
+
+    /* Event items take full width */
+    .event-item {
+        width: 100%; /* Full width for mobile */
+        margin-bottom: 10px; /* Less margin */
+    }
+
+    /* Footer adjustments */
+    .footer {
+        padding: 8px;
+        font-size: 10px; /* Smaller footer font size */
+    }
+
+    .footer p {
+        margin: 3px 0; /* Less margin for compact design */
+    }
+}
