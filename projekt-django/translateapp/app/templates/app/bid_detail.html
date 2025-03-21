@@ -1,0 +1,100 @@
+{% extends 'app/base.html' %}
+
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <h1 class="mb-5 mt-5">Translation completed!</h1>
+      <p> 
+        Bid from <a href="{% url 'accounts:profile' bid.bidder.id %}">{{ bid.bidder.account.name }}</a>
+        for a job from <a href="{% url 'accounts:profile' job.user.id %}">{{ job.user.account.name }}</a>
+      </p> 
+      <p>
+        <strong>{{ job.title }}</strong></br>
+        {{ job.description }}
+      </p>
+      <p>Job budget: {{ job.budget }}; Bid amount: {{ bid.price }} </p>
+    </div>
+    <div class="col-md-6">
+      <h1>Rating details</h1>
+      {% if bid.rating  %}
+        <!--if job is completed and rating exists -->
+        {% if user == bid.bidder %}
+          <h2>You were rated: {{ bid.rating.rating }}</h2>
+        {% elif user == bid.job.user %}
+          <h2>You rated this job: {{ bid.rating.rating }}</h2>
+        {% endif %}
+      {% elif bid.dispute  %}
+        <!--if job is completed and rating exists -->
+        {% if user == bid.bidder %}
+          <h2>Your job got disputed!</h2>
+          <p>Waiting for an admin to resolve...</p>
+          <blockquote class="blockquote">
+            {{ bid.dispute.reason }}
+          </blockquote>
+        {% elif user == bid.job.user %}
+          <h2>You disputed this job!</h2>
+          <blockquote class="blockquote">
+            {{ bid.dispute.reason }}
+          </blockquote>
+        {% endif %}
+      {% else %}
+        <!--we are still waiting for the job owner to rate the translation -->
+        {% if user == bid.bidder %}
+          <h2>Waiting for the rating from the Job owner</h2>
+        {% elif user == bid.job.user %}
+          <h2>Rate the translation!</h2>
+
+          <form action="{% url 'app:rate_bid' bid.id %}" method="post">
+            {% csrf_token %}
+            <input type="submit" value="1" name="rating" class="btn btn-primary">
+            <input type="submit" value="2" name="rating" class="btn btn-primary">
+            <input type="submit" value="3" name="rating" class="btn btn-primary">
+            <input type="submit" value="4" name="rating" class="btn btn-primary">
+            <input type="submit" value="5" name="rating" class="btn btn-primary">
+          </form>
+          <p>Or raise a dispute if you're not satisfied</p>
+
+          <form action="{% url 'app:dispute' bid.id %}" method="post">
+            {% csrf_token %}
+
+            {% for field in form.visible_fields %}
+              <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field|add_class:'form-control' }}
+                {% for error in field.errors %}
+                  <span class="help-block">{{ error }}</span>
+                {% endfor %}
+              </div>
+            {% endfor %}
+
+            <div class="form-group">
+              <button type="submit" class="btn btn-danger">
+                <span class="glyphicon glyphicon-ok"></span> Start a Dispute
+              </button>
+            </div>
+          </form>
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="col-md-6">
+      <p><strong>Original text:</strong></p>
+      <p class="with-whitespace">
+        {{ job.text }}
+      </p>
+    </div>
+    <div class="col-md-6">
+      <p><strong>Translated text: </strong></p>
+      <p class="with-whitespace">
+        {{ job.translation }}
+      </p>
+    </div>
+    
+  </div>
+</div>
+
+
+
+{% endblock %}
